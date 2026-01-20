@@ -108,7 +108,7 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 			ch <- prometheus.MustNewConstMetric(c.memoryMax, prometheus.GaugeValue, negativeOneIfMax(info.MemoryMax), cg, info.Username)
 			ch <- prometheus.MustNewConstMetric(c.cpuQuota, prometheus.CounterValue, float64(info.CPUQuota), cg, info.Username)
 
-			procs, err := ProcessInfo(cg, pids)
+			procs, err = ProcessInfo(cg, pids)
 			if err != nil {
 				slog.Warn("unable to collect process info", "cgroup", cg, "err", err)
 				return
