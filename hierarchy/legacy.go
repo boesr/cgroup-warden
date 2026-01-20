@@ -71,7 +71,7 @@ func (l *Legacy) GetGroupsWithPIDs() (map[string]map[uint64]bool, error) {
 	return pids, nil
 }
 
-func (l *Legacy) CGroupInfo(cg string) (CGroupInfo, error) {
+func (l *Legacy) CGroupInfo(cg string, ignoreCache bool) (CGroupInfo, error) {
 	var info CGroupInfo
 
 	manager, err := cgroup1.Load(cgroup1.StaticPath(cg), cgroup1.WithHierarchy(subsystem))

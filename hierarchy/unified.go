@@ -50,7 +50,7 @@ func (u *Unified) GetGroupsWithPIDs() (map[string]map[uint64]bool, error) {
 	return pids, nil
 }
 
-func (u *Unified) CGroupInfo(cg string) (CGroupInfo, error) {
+func (u *Unified) CGroupInfo(cg string, ignoreCache bool) (CGroupInfo, error) {
 	var info CGroupInfo
 
 	manager, err := cgroup2.Load(cg)
