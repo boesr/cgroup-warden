@@ -18,7 +18,7 @@ const (
 
 type Hierarchy interface {
 	GetGroupsWithPIDs() (map[string]map[uint64]bool, error)
-	CGroupInfo(cg string, ignoreCache bool) (CGroupInfo, error)
+	CGroupInfo(cg string) (CGroupInfo, error)
 	SetMemoryLimits(unit string, limit int64) (int64, error)
 }
 
@@ -40,7 +40,6 @@ func NewHierarchy(root string) Hierarchy {
 type CGroupInfo struct {
 	Username    string
 	MemoryUsage uint64
-	MemoryPSS   uint64
 	CPUUsage    float64
 	MemoryMax   uint64
 	CPUQuota    int64

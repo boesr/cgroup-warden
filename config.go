@@ -20,7 +20,6 @@ type Config struct {
 	MetaMetrics   bool    `env:"META_METRICS" envDefault:"true"`
 	LogLevel      string  `env:"LOG_LEVEL" envDefault:"info"`
 	SwapRatio     float64 `env:"SWAP_RATIO" envDefault:"0.1"`
-	IgnoreCache   bool    `env:"IGNORE_CACHE" envDefault:"false"`
 }
 
 func NewConfig() (*Config, error) {

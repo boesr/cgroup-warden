@@ -47,7 +47,7 @@ func main() {
 	updateLogLevel(conf.LogLevel)
 
 	mux := http.NewServeMux()
-	mux.Handle("/metrics", metrics.MetricsHandler(conf.RootCGroup, conf.MetaMetrics, conf.IgnoreCache))
+	mux.Handle("/metrics", metrics.MetricsHandler(conf.RootCGroup, conf.MetaMetrics))
 	mux.Handle("/", http.NotFoundHandler())
 
 	if conf.InsecureMode {

@@ -24,10 +24,10 @@ var (
 	procLabels = []string{"cgroup", "username", "proc"}
 )
 
-func MetricsHandler(root string, meta bool, ignoreCache bool) http.HandlerFunc {
+func MetricsHandler(root string, meta bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		registry := prometheus.NewRegistry()
-		collector := NewCollector(root, ignoreCache)
+		collector := NewCollector(root)
 		registry.MustRegister(collector)
 		gatherers := prometheus.Gatherers{registry}
 		if meta {
@@ -40,7 +40,6 @@ func MetricsHandler(root string, meta bool, ignoreCache bool) http.HandlerFunc {
 
 type Collector struct {
 	root        string
-	ignoreCache bool
 	memoryUsage *prometheus.Desc
 	cpuUsage    *prometheus.Desc
 	procCPU     *prometheus.Desc
@@ -76,10 +75,10 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 	for cg, pids := range groups {
 		active[cg] = true
 		wg.Add(1)
-		go func(cd string, pids map[uint64]bool) {
+		go func() {
 			defer wg.Done()
 
-			info, err := h.CGroupInfo(cg, c.ignoreCache)
+			info, err := h.CGroupInfo(cg)
 			if err != nil {
 				slog.Warn("unable to collect group info", "cgroup", cg, "err", err)
 				return
@@ -91,19 +90,6 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 				return
 			}
 
-			finalMemoryUsage := float64(info.MemoryUsage)
-			if c.ignoreCache {
-				var totalPSS uint64
-				for _, p := range procs {
-					totalPSS += p.memoryPSSTotal
-				}
-				// Wir nutzen die PSS-Summe, falls Prozesse gefunden wurden
-				if totalPSS > 0 {
-					finalMemoryUsage = float64(totalPSS)
-				}
-			}
-
-			ch <- prometheus.MustNewConstMetric(c.memoryUsage, prometheus.GaugeValue, float64(finalMemoryUsage), cg, info.Username)
 			ch <- prometheus.MustNewConstMetric(c.cpuUsage, prometheus.CounterValue, info.CPUUsage, cg, info.Username)
 			ch <- prometheus.MustNewConstMetric(c.memoryMax, prometheus.GaugeValue, negativeOneIfMax(info.MemoryMax), cg, info.Username)
 			ch <- prometheus.MustNewConstMetric(c.cpuQuota, prometheus.CounterValue, float64(info.CPUQuota), cg, info.Username)
@@ -114,22 +100,27 @@ func (c *Collector) Collect(ch chan<- prometheus.Metric) {
 				return
 			}
 
+			var totalPSS float64 
+
 			for name, p := range procs {
+				totalPSS += float64(p.memoryPSSTotal)
 				ch <- prometheus.MustNewConstMetric(c.procCPU, prometheus.CounterValue, float64(p.cpuSecondsTotal), cg, info.Username, name)
 				ch <- prometheus.MustNewConstMetric(c.procMemory, prometheus.GaugeValue, float64(p.memoryBytesTotal), cg, info.Username, name)
 				ch <- prometheus.MustNewConstMetric(c.procPSS, prometheus.GaugeValue, float64(p.memoryPSSTotal), cg, info.Username, name)
 				ch <- prometheus.MustNewConstMetric(c.procCount, prometheus.GaugeValue, float64(p.count), cg, info.Username, name)
 			}
-		}(cg, pids)
+
+			ch <- prometheus.MustNewConstMetric(c.memoryUsage, prometheus.GaugeValue, totalPSS, cg, info.Username)
+
+		}()
 	}
 	wg.Wait()
 	CleanProcessCache(active)
 }
 
-func NewCollector(root string, ignoreCache bool) *Collector {
+func NewCollector(root string) *Collector {
 	return &Collector{
 		root: root,
-		ignoreCache: ignoreCache,
 		memoryUsage: prometheus.NewDesc(prometheus.BuildFQName(namespace, "memory", "usage_bytes"),
 			"Total memory usage in bytes", labels, nil),
 		cpuUsage: prometheus.NewDesc(prometheus.BuildFQName(namespace, "cpu", "usage_seconds"),

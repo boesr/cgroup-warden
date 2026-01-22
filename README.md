@@ -31,7 +31,6 @@ The following flags are passed as environment variables
 `CGROUP_WARDEN_META_METRICS` : Whether to export metrics regarding the running warden itself. Defaults to `true`.  
 `CGROUP_WARDEN_LOG_LEVEL` : Level at which to log messages. Choices are `debug`, `info`, `warning`, and `error`. Defaults to `info`  
 `CGROUP_WARDEN_SWAP_RATIO` : For the unfied cgroup hierarchy specifes what ratio of user's physical memory max that their swap max is set to. Defaults to `0.1` (10%)
-`CGROUP_WARDEN_IGNORE_CACHE` : Whether to ignore the filesystem page cache in memory usage calculations. If set to `true`, the warden will report the sum of PSS (Proportional Set Size) for all processes in the cgroup instead of the raw kernel usage. This prevents utilities like `rsync` or large file I/O from artificially inflating the reported memory usage. Defaults to `false`
 
 When passing these to a systemd service, you can put them into an environment file:
 ```shell
